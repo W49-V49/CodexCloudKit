@@ -23,6 +23,7 @@ q = None
 w = None
 SERVER = None
 SCRIPT = None
+SERVER_STARTS = 0
 
 
 def git(root, *args):
@@ -31,21 +32,32 @@ def git(root, *args):
 
 class RealQueueAcceptance(unittest.TestCase):
     def setUp(self):
+        global SERVER_STARTS
         self.temporary = tempfile.TemporaryDirectory(prefix='cloudkit-rq-accept-')
+        self.addCleanup(self.temporary.cleanup)
         self.base = Path(self.temporary.name)
         self.port_socket = socket.socket();self.port_socket.bind(('127.0.0.1',0));port = self.port_socket.getsockname()[1];self.port_socket.close()
         self.url = 'redis://127.0.0.1:' + str(port) + '/0'
         self.environment = patch.dict(os.environ, {'CLOUDKIT_REDIS_URL':self.url});self.environment.start()
+        self.addCleanup(self.environment.stop)
+        self.server_stdout = self.base/'redis-process.stdout.log'
+        self.server_stderr = self.base/'redis-process.stderr.log'
+        stdout = self.server_stdout.open('w');stderr = self.server_stderr.open('w')
+        self.addCleanup(stdout.close);self.addCleanup(stderr.close)
         self.server = subprocess.Popen([SERVER,'--port',str(port),'--bind','127.0.0.1','--save','',
             '--appendonly','no','--dir',str(self.base),'--logfile',str(self.base/'redis.log')],
-            stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+            stdout=stdout,stderr=stderr)
+        self.addCleanup(self._stop_server)
         self.connection = q._connection()
         deadline = time.monotonic()+10
         while True:
+            if self.server.poll() is not None:
+                raise RuntimeError(self._startup_diagnostics('Redis exited before becoming ready'))
             try:
-                self.connection.ping();break
+                self.connection.ping();SERVER_STARTS+=1;break
             except Exception:
-                if time.monotonic()>=deadline:raise
+                if time.monotonic()>=deadline:
+                    raise RuntimeError(self._startup_diagnostics('Redis did not become ready before the startup deadline')) from None
                 time.sleep(.05)
         remote = self.base/'control.git';self.control = self.base/'control'
         subprocess.run(['git','init','--bare','-q',str(remote)],check=True)
@@ -75,11 +87,17 @@ print(json.dumps({'fixture':True,'request_id':r['request_id']}))
             'acceptance_timeout_seconds':10}
         w.register_worker(self.store,'goal',self.plan)
 
-    def tearDown(self):
-        self.server.terminate()
-        try:self.server.wait(timeout=5)
-        except subprocess.TimeoutExpired:self.server.kill();self.server.wait(timeout=5)
-        self.environment.stop();self.temporary.cleanup()
+    def _stop_server(self):
+        if self.server.poll() is None:
+            self.server.terminate()
+            try:self.server.wait(timeout=5)
+            except subprocess.TimeoutExpired:self.server.kill();self.server.wait(timeout=5)
+
+    def _startup_diagnostics(self, reason):
+        details=[reason, 'invoked_path='+str(SERVER), 'exit_code='+str(self.server.poll())]
+        for label,path in [('stdout',self.server_stdout),('stderr',self.server_stderr),('redis_log',self.base/'redis.log')]:
+            details.append(label+':\n'+(path.read_text(errors='replace')[-6000:] if path.exists() else '(not created)'))
+        return '\n'.join(details)
 
     def state(self):return self.store.read()[1]['autonomy_tasks']['goal']
 
@@ -220,11 +238,15 @@ def main():
     sys.path.insert(0,str(SCRIPT.parent))
     import queue_bridge as bridge
     import worker_supervisor as supervisor
-    q,w,SERVER=bridge,supervisor,str(Path(args.redis_server).resolve())
+    # Preserve argv[0]: distro redis-server may be a symlink to a multicall
+    # redis-check-rdb executable whose behavior depends on the invoked name.
+    q,w,SERVER=bridge,supervisor,os.path.abspath(args.redis_server)
     suite=unittest.defaultTestLoader.loadTestsFromTestCase(RealQueueAcceptance)
-    result=unittest.TextTestRunner(verbosity=2).run(suite)
-    report={'passed':result.wasSuccessful(),'tests_run':result.testsRun,'real_redis_service':True,
-        'redis_server_version':subprocess.check_output([SERVER,'--version'],text=True).strip(),
+    result=unittest.TextTestRunner(verbosity=2,failfast=True).run(suite)
+    version=subprocess.run([SERVER,'--version'],capture_output=True,text=True,timeout=5)
+    report={'passed':result.wasSuccessful(),'tests_run':result.testsRun,'real_redis_service':SERVER_STARTS>0,
+        'redis_service_starts':SERVER_STARTS,'redis_server_invocation':SERVER,'server_invocation_preserved':True,
+        'redis_server_version':(version.stdout or version.stderr).strip(),
         'distributions':{'rq':importlib.metadata.version('rq'),'redis':importlib.metadata.version('redis')},
         'bridge_script_sha256':hashlib.sha256(SCRIPT.read_bytes()).hexdigest(),
         'canonical_task_state':'Git continuity.Store/autonomy_tasks','formal_memory_stored_in_redis':False,
