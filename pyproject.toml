@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "codexcloudkit"
-version = "0.1.0"
+version = "0.1.1"
 description = "Reusable cloud tooling, project attachment, and recoverable Codex workflows"
 requires-python = ">=3.11"
 license = "Unlicense"
