@@ -42,6 +42,21 @@ cloudkit memory --project-id example/business-project --branch main \
 
 其他可选 profile 为 `languages`、`reverse`、`design`、`code-intelligence`，具体前置与调用见[可选工具配置](TOOLCHAINS_ZH.md)。
 
+## 可选事件队列
+
+`setup --profile queue` 在共享 runtime 的 `queue/.venv` 准备锁定客户端。通过 `CLOUDKIT_REDIS_URL` 配置实际服务；未设置时桥接默认 `redis://127.0.0.1:16379/0`。
+
+```bash
+cloudkit setup --runtime-root /workspace/external-tools/codexcloudkit --profile queue
+cloudkit queue --runtime-root /workspace/external-tools/codexcloudkit -- \
+  --repository /workspace/private-control --queue cloudkit \
+  inspect --task-id project-goal-001
+```
+
+`queue` 后的 `--` 分隔 CLI 与桥接参数。桥接全局参数为 `--repository`、`--project-root`、`--queue`、`--ref` 和 `--github-repository`，然后选择 `enqueue`、`worker` 或 `inspect`。完整注册、服务和备用路线见[队列部署](QUEUE_ZH.md)。Git 控制状态继续作为唯一来源。
+
+`CLOUDKIT_RUNS_ROOT` 配置自动克隆恢复的根目录，默认 `/workspace/autonomy-runs`。不同消费者可以使用自己的目录，保持同一控制仓库、项目身份和分支；队列事件不依赖 producer 的本机绝对路径。
+
 ## 派生清单导出
 
 ```bash
@@ -67,6 +82,7 @@ cloudkit index --help
 cloudkit restore-index --help
 cloudkit memory --help
 cloudkit mcp --help
+cloudkit queue --help
 cloudkit run --help
 ```
 

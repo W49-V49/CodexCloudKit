@@ -17,7 +17,7 @@ cloudkit = "cloudkit.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-cloudkit = ["assets/native_memory/*", "assets/toolchains/*", "assets/toolchains/**/*", "runtime/*.json", "runtime/*.lock"]
+cloudkit = ["assets/native_memory/*", "assets/queue/*", "assets/toolchains/*", "assets/toolchains/**/*", "runtime/*.json", "runtime/*.lock"]
 
 [tool.setuptools.exclude-package-data]
 "*" = ["**/__pycache__/*", "**/*.pyc", "**/*.pyo"]

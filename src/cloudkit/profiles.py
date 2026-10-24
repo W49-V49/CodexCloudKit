@@ -19,20 +19,108 @@ def _digest(path: Path) -> str:
 
 
 def install_profile(name: str, runtime: Path) -> dict:
-    if name != 'memory':
+    if name not in ('memory', 'queue'):
         raise ValueError(f'Unknown profile: {name}')
+    runtime = Path(runtime).absolute()
+    if name == 'queue':
+        for parent in (runtime, *runtime.parents):
+            if parent.is_symlink():
+                raise ValueError('The shared runtime is a user-managed link')
     if runtime.is_symlink():
         raise ValueError('The shared runtime is a user-managed link')
-    if sys.version_info < (3, 12):
+    if name == 'memory' and sys.version_info < (3, 12):
         raise ValueError('The memory profile requires Python 3.12 or newer; the core profile supports Python 3.11')
     runtime = runtime.resolve()
     runtime.mkdir(parents=True, exist_ok=True)
-    lock_path = runtime / '.memory-profile.lock'
+    lock_path = runtime / ('.' + name + '-profile.lock')
     if lock_path.is_symlink():
         raise ValueError('The memory profile lock is a user-managed link')
     with lock_path.open('a') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
-        return _install_memory(runtime)
+        return _install_memory(runtime) if name == 'memory' else _install_queue(runtime)
+
+
+def _install_queue(runtime: Path) -> dict:
+    assets = Path(__file__).parent / 'assets/queue'
+    destination = runtime / 'queue'
+    if destination.is_symlink():
+        raise ValueError('The queue runtime path is a user-managed link')
+    destination.mkdir(parents=True, exist_ok=True)
+    receipt_file = destination / 'installation.json'
+    owner_file = destination / '.environment-owner.json'
+    marker_file = destination / '.dependencies-installed'
+    for path in (receipt_file, owner_file, marker_file, destination / '.venv'):
+        if path.is_symlink():
+            raise ValueError('A queue service path is a user-managed link: ' + path.name)
+    wanted_owner = {'schema_version': 1, 'managed_by': 'CodexCloudKit', 'profile': 'queue'}
+    owner = json.loads(owner_file.read_text()) if owner_file.is_file() else {}
+    previous = json.loads(receipt_file.read_text()) if receipt_file.is_file() else {}
+    if owner and owner != wanted_owner:
+        raise ValueError('An existing queue environment was preserved')
+    if (destination / '.venv').exists() and not owner and not previous:
+        raise ValueError('An existing queue environment was preserved')
+    sources = {name: assets / name for name in ('requirements.in', 'requirements.lock')}
+    for name, source in sources.items():
+        target = destination / name
+        if target.is_symlink():
+            raise ValueError('A queue service file is a user-managed link: ' + name)
+        if target.exists() and (not target.is_file() or _digest(target) not in (_digest(source), previous.get('managed', {}).get(name))):
+            raise ValueError('A queue service file contains a local customization: ' + name)
+    changes = []
+    if not owner:
+        atomic(owner_file, wanted_owner)
+    for name, source in sources.items():
+        target = destination / name
+        if not target.exists() or _digest(target) != _digest(source):
+            shutil.copyfile(source, target)
+            changes.append(name)
+    environment = os.environ.copy()
+    environment['UV_CACHE_DIR'] = str(runtime / 'uv-cache')
+    python = destination / '.venv/bin/python'
+    if not python.is_file():
+        result = subprocess.run([sys.executable, '-m', 'venv', str(destination / '.venv')], capture_output=True, text=True)
+        if result.returncode:
+            _failure_log(destination, 'queue-environment', result)
+            raise RuntimeError('Queue environment creation failed')
+    lock_hash = _digest(destination / 'requirements.lock')
+    expected_versions = {name.lower().replace('_', '-').replace('.', '-'): version
+                         for name, version in re.findall(r'^([A-Za-z0-9_.-]+)==([^\s\\]+)',
+                            (destination / 'requirements.lock').read_text(), flags=re.M)}
+    dependency_versions = _dependency_versions(python)
+    dependencies_reused = (previous.get('requirements_sha256') == lock_hash
+                           and marker_file.is_file() and marker_file.read_text().strip() == lock_hash
+                           and all(dependency_versions.get(name) == version for name, version in expected_versions.items()))
+    if not dependencies_reused:
+        uv = shutil.which('uv')
+        if uv:
+            command = [uv, 'pip', 'sync', '--python', str(python), '--require-hashes', str(destination / 'requirements.lock')]
+        else:
+            command = [str(python), '-m', 'pip', 'install', '--disable-pip-version-check', '--require-hashes', '-r', str(destination / 'requirements.lock')]
+        result = subprocess.run(command, env=environment, capture_output=True, text=True)
+        if result.returncode:
+            _failure_log(destination, 'queue-dependencies', result)
+            raise RuntimeError('Pinned queue dependency installation failed')
+        marker_file.write_text(lock_hash + '\n')
+        dependency_versions = _dependency_versions(python)
+    if not all(dependency_versions.get(name) == version for name, version in expected_versions.items()):
+        raise RuntimeError('The installed queue distributions do not match their pinned versions')
+    probe = subprocess.run([str(python), '-c',
+                            'import json,redis,rq; print(json.dumps({"rq":rq.__version__,"redis":redis.__version__}))'],
+                           capture_output=True, text=True)
+    if probe.returncode:
+        _failure_log(destination, 'queue-imports', probe)
+        raise RuntimeError('Installed queue client imports failed')
+    bridge = Path(__file__).parent / 'runtime/queue_bridge.py'
+    receipt = {'schema_version': 1, 'passed': True, 'profile': 'queue', 'python': str(python),
+               'requirements_sha256': lock_hash, 'dependencies_reused': dependencies_reused,
+               'dependency_install_performed': not dependencies_reused,
+               'distribution_versions': dependency_versions, 'verified_distribution_count': len(expected_versions),
+               'import_versions': json.loads(probe.stdout),
+               'managed': {name: _digest(destination / name) for name in sources}, 'source_files_updated': changes,
+               'bridge_script': str(bridge), 'job_import_strategy': 'script-directory queue_bridge.consume',
+               'redis_service_started': False, 'redis_connection_tested': False}
+    atomic(receipt_file, receipt)
+    return receipt
 
 
 def _install_memory(runtime: Path) -> dict:

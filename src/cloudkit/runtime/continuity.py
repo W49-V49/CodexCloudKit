@@ -350,7 +350,7 @@ def run_round(store, identifier, event_id, owner, project_root=None):
         return acquired
     item = acquired['task']
     plan = item['plan']
-    root = Path(project_root).resolve() if project_root else Path('/workspace/autonomy-runs') / identifier / 'project'
+    root = Path(project_root).resolve() if project_root else Path(os.environ.get('CLOUDKIT_RUNS_ROOT', '/workspace/autonomy-runs')) / identifier / 'project'
     checkpoint = root.parent / 'runtime' / 'STATE.json'
     try:
         if project_root is None:
@@ -494,16 +494,20 @@ def main():
         identifiers = [task_id(args.task_id)] if args.task_id else pending(store)
         results = []
         command_ran = False
+        worker_selected = False
         for identifier in identifiers:
             _, control = store.read()
             item = control.get('autonomy_tasks', {}).get(identifier, {})
-            if item.get('kind') == 'command' and command_ran:
+            is_worker = bool(item.get('worker_supervisor'))
+            is_execution = item.get('kind') == 'command' or is_worker
+            if is_execution and command_ran:
                 continue
             if item.get('status') == 'WAITING_CAPABILITY' and item.get('kind') != 'model':
                 continue
-            command_ran = command_ran or item.get('kind') == 'command'
+            worker_selected = worker_selected or is_worker
             event = args.event_id + '-' + identifier
             result = run_round(store, identifier, event, args.owner)
+            command_ran = command_ran or (is_execution and result.get('claimed', False))
             if result.get('status') in ('READY', 'RETRY_WAIT') or result.get('reason') == 'duplicate-event':
                 result['next_round'] = flush_outbox(store, github, args.ref, identifier)
             results.append(result)
@@ -521,7 +525,9 @@ def main():
                 return None, None
             store.update(ensure_wakeup, 'Reconcile shared wakeup after coalesced GitHub events')
             results.append({'pending_task_wakeup': flush_outbox(store, github, args.ref, remaining[0])})
-        result = {'scope': 'actual-command-continuation', 'model_called': False, 'results': results}
+        result = {'scope': 'worker-and-command-continuation' if worker_selected else 'actual-command-continuation',
+                  'model_called': any(item.get('model_invocation_attempted') or item.get('model_called') for item in results),
+                  'results': results}
     elif args.command == 'preflight':
         parent, state, actual = verify_expected_sha(store, args.expected_sha)
         result = {'schema_version': 1, 'verification_scope': 'dispatch-preflight-only', 'model_called': False,

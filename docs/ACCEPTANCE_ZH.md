@@ -39,6 +39,21 @@ PYTHONPATH=src /workspace/external-tools/codexcloudkit/memory/.venv/bin/python \
 
 使用可检查的真实子进程验证：失败、反馈修复、独立验收、持久断点、并发租约、同事件去重、熔断备用及 DONE 停止。合成 worker 的测试结果描述这些执行行为，不会被写成真实模型推理成功。
 
+## 可选队列验收
+
+`queue` 配置先验证锁定安装、七项发行版本、重复零重装和原有 memory 实现保持。运输测试使用真实 Redis 与独立 RQ 消费者，覆盖失败反馈修复、独立验收、DONE 停派、重复事件、消费者重启、不同目录接管和 Redis 中断后的既有派发备用。
+
+从源码 checkout 运行以下入口，使用已准备的队列环境和外置 Redis 程序：
+
+```bash
+/workspace/external-tools/codexcloudkit/queue/.venv/bin/python scripts/verify_queue.py \
+  --redis-server /workspace/external-tools/codexcloudkit/queue-runtime/bin/redis-server \
+  --bridge-script /workspace/CodexCloudKit/src/cloudkit/runtime/queue_bridge.py \
+  --output /workspace/verification/queue-acceptance.json
+```
+
+脚本使用一次性 Redis 服务、临时 Git 控制仓库和显式命令夹具。它不读取用户真实任务，不把运输成功或合成 worker 标记为模型能力。报告区分真实 Redis、Git 持久状态、不同目录恢复及受控 GitHub 备用协议；实际 GitHub 派发与真实 Codex 请求另行验证。
+
 ## 模型与业务
 
 真实后端额外记录客户端版本、实际模型请求、输出、项目修改和独立验收。模型成功返回与项目功能验收分别判断。运行器长期恢复还需验证进程/机器重启后的接续，而不是只保留一个后台 PID。

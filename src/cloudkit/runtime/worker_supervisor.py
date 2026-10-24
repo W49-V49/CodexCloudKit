@@ -215,9 +215,9 @@ def _error(code, stdout, stderr, exception):
 
 def run_round(store, identifier, event_id, owner, project_root=None, clock=c.utc):
     c.task_id(identifier); c.task_id(event_id)
-    root = Path(project_root).resolve(strict=True) if project_root else Path('/workspace/autonomy-runs')/identifier/'project'
+    root = Path(project_root).resolve(strict=True) if project_root else Path(os.environ.get('CLOUDKIT_RUNS_ROOT', '/workspace/autonomy-runs'))/identifier/'project'
     if project_root is None:
-        workspace = Path('/workspace').resolve()
+        workspace = Path(os.environ.get('CLOUDKIT_RUNS_ROOT', '/workspace/autonomy-runs')).resolve()
         if root.is_symlink() or not root.resolve().is_relative_to(workspace):
             raise ValueError('Default worker clone path is not a regular workspace destination')
     checkpoint = root.parent / ('.cloudkit-worker-' + identifier) / 'STATE.json'

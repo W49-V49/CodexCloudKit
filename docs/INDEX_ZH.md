@@ -8,6 +8,8 @@
 | 接入新的业务仓库 | [新仓库接入](NEW_REPOSITORY_ZH.md) |
 | 记忆与恢复 | [记忆与恢复](MEMORY_AND_RECOVERY_ZH.md) |
 | CLI 与路径设置 | [配置](CONFIGURATION_ZH.md) |
+| 可选 Redis/RQ 事件唤醒 | [队列](QUEUE_ZH.md) |
+| 浏览器 Worker、函数与队列选择 | [执行器选型](EXECUTOR_CHOICES_ZH.md) |
 | 语言、逆向、图表与代码智能 | [可选工具配置](TOOLCHAINS_ZH.md) |
 | 安装规格与适用版本 | [兼容性](COMPATIBILITY.md) |
 | 更新、故障与清理 | [运维](OPERATIONS_ZH.md) |

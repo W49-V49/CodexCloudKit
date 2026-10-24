@@ -6,6 +6,7 @@
 | --- | --- | --- |
 | `core` | 共享技能、接入、doctor 与增量清单 | Python 3.11+ |
 | `memory` | Basic Memory 0.24.1、固定离线嵌入与正式协议 | Python 3.12+ |
+| `queue` | RQ 2.12.0、redis 客户端与固定依赖 | Python 3.11+；另需实际 Redis/Valkey 服务 |
 | `languages` | 语言编译器、格式化/检查工具与编辑器配置 | Linux x86_64、Python 3.12+、Node/npm/uv |
 | `reverse` | Ghidra 12.2、Rizin 0.9.1、hexyl 0.17.0 及静态分析工具 | Linux x86_64、Python 3.12+、uv；自动准备所需 JDK |
 | `design` | 图表检查、数据导入与 SVG/PNG 导出入口 | Linux x86_64、Python 3.12+；准备固定 Playwright 与兼容 Chromium |
@@ -15,6 +16,7 @@
 
 ```bash
 cloudkit setup --runtime-root /workspace/external-tools/codexcloudkit --profile memory
+cloudkit setup --runtime-root /workspace/external-tools/codexcloudkit --profile queue
 cloudkit setup --runtime-root /workspace/external-tools/codexcloudkit --profile languages
 cloudkit setup --runtime-root /workspace/external-tools/codexcloudkit --profile reverse
 cloudkit setup --runtime-root /workspace/external-tools/codexcloudkit --profile design
@@ -22,6 +24,8 @@ cloudkit setup --runtime-root /workspace/external-tools/codexcloudkit --profile 
 ```
 
 这些是分别选择的配置，不要求每个任务全装。重复安装核对受管收据和包哈希，保留用户定制。完整安装包含语言包、JDK、Ghidra、模型和缓存，应先核对磁盘；低配环境可以只准备核心和当前任务需要的配置。
+
+七项 profile 各自准备对应功能。`queue` 仅安装客户端和唤醒桥，不启动 Redis，也不替换正式记忆。实际服务和 worker 的部署见[RQ 队列](QUEUE_ZH.md)。
 
 ## 语言与编辑器
 

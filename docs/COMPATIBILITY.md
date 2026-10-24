@@ -7,6 +7,7 @@ The core package uses Python and explicit filesystem paths. The release CI recor
 | Core CLI | Python 3.11 or newer, as declared by `pyproject.toml`; writable runtime and state directories |
 | Repository attachment | Existing project checkout; Git is used when available for local generated-file excludes |
 | File inventory | Readable project source and writable external state |
+| Queue profile | Python 3.11+, pinned RQ/redis clients and a configured Redis/Valkey service |
 | Memory profile | Python 3.12 or newer; prepared native backend, compatible parser/model fingerprint and persistent project partition |
 | Optional toolchains | Linux x86_64, Python 3.12+, profile-specific prerequisites and sufficient disk |
 | Worker supervisor | Configured worker executable, actual authentication and independent acceptance commands |

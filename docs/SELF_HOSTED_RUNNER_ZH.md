@@ -65,6 +65,12 @@ cp /workspace/CodexCloudKit/examples/autonomy.yml .github/workflows/autonomy.yml
 
 发布模板、注册 Runner 和配置变量不等于已经运行模型。以 Actions 的真实轮次结果、模型探针和项目验收判断持续工作是否建立；当前包中的模板是部署入口，运行状态由目标环境验证。
 
+## 可选 Redis/RQ 即时唤醒
+
+已有持久 Git 控制流程可继续使用上节 GitHub 事件和小时巡检。需要 Python 队列消费者时，额外准备 `setup --profile queue`、可访问 Redis/Valkey 服务，并在独立云进程托管 `cloudkit queue ... worker --poll`。初始化、入队和检查命令见[队列部署](QUEUE_ZH.md)。
+
+队列只运输现有 outbox 事件；每次读取 Git 最新目标、租约和验收，`READY` 继续入队，`DONE` 停止。Redis 失败时保留 Git 状态并切既有 GitHub/小时路线。浏览器 Worker 和托管函数的适用场景见[执行器选型](EXECUTOR_CHOICES_ZH.md)。
+
 ## 独立验收层次
 
 | 层次 | 验证内容 |

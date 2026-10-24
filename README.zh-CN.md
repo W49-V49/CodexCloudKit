@@ -29,7 +29,7 @@ python3 -m venv /workspace/external-tools/codexcloudkit-venv
 | 内容哈希与增量清单机制 | 独立项目身份、分支和目标 |
 | 记忆协议和执行器接入 | 独立记忆、断点与验收证据 |
 
-核心默认不下载完整语言生态或大型二进制套件。需要的工具、模型执行后端和正式记忆协议由任务配置，并分别做实际调用验证。
+核心默认不下载完整语言生态或大型二进制套件。七项可选配置覆盖 core、memory、queue、languages、reverse、design 和 code-intelligence。RQ 仅递送执行事件，Git 保持唯一任务状态。需要的工具、模型执行后端和正式记忆协议由任务配置，并分别做实际调用验证。
 
 ## 文档入口
 
@@ -42,6 +42,8 @@ python3 -m venv /workspace/external-tools/codexcloudkit-venv
 - [语言、逆向、图表与代码智能](docs/TOOLCHAINS_ZH.md)
 - [多 Agent 与目标闭环](docs/AGENT_WORKFLOWS_ZH.md)
 - [目标计划与执行命令](docs/EXECUTION_ZH.md)
+- [可选 Redis/RQ 队列](docs/QUEUE_ZH.md)
+- [执行器与事件工具选型](docs/EXECUTOR_CHOICES_ZH.md)
 - [技能、工具与 MCP](docs/SKILLS_AND_TOOLS_ZH.md)
 - [升级、故障与清理](docs/OPERATIONS_ZH.md)
 - [实际验收与复验](docs/ACCEPTANCE_ZH.md)

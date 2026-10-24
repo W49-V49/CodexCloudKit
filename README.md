@@ -17,7 +17,7 @@ python3 -m venv /workspace/external-tools/codexcloudkit-venv
 /workspace/external-tools/codexcloudkit-venv/bin/cloudkit doctor   --runtime-root /workspace/external-tools/codexcloudkit
 ```
 
-The core preparation uses a small shared runtime. Project-specific language packages, browser services and model backends are configured for the task that needs them.
+The core preparation uses a small shared runtime. Seven selectable profiles cover core, memory, queue, languages, reverse, design and code intelligence. Project-specific services and model backends are configured for the task that needs them.
 
 ## What it does
 
@@ -28,6 +28,7 @@ The core preparation uses a small shared runtime. Project-specific language pack
 | Incremental inventory | Compare content hashes and reuse unchanged entries |
 | Memory integration | Built-in protocol with an optional memory profile and project-bound operations |
 | Execution integration | Built-in supervisor with configured workers and independent acceptance commands |
+| Optional queue | RQ wakeups with task checkpoints and acceptance remaining in Git |
 | Recovery | Keep runtime state outside public source and resume saved work |
 
 The configured model backend supplies real model execution. Supervisor subprocess fixtures, model calls and business acceptance are measured separately in [verification](docs/ACCEPTANCE_ZH.md).
@@ -49,6 +50,8 @@ Read the project's existing `AGENTS.md` together with the generated `AGENTS.clou
 - [Curated memory and recovery](docs/MEMORY_AND_RECOVERY_ZH.md)
 - [Agent workflows](docs/AGENT_WORKFLOWS_ZH.md)
 - [Worker plans and execution](docs/EXECUTION_ZH.md)
+- [Optional Redis/RQ queue](docs/QUEUE_ZH.md)
+- [Executor choices](docs/EXECUTOR_CHOICES_ZH.md)
 - [Skills and MCP](docs/SKILLS_AND_TOOLS_ZH.md)
 - [Operations and troubleshooting](docs/OPERATIONS_ZH.md)
 - [Architecture](docs/ARCHITECTURE_ZH.md)

@@ -2,6 +2,7 @@
 """Real Git and subprocess tests for the worker adapter; no model is simulated as real."""
 import concurrent.futures
 import copy
+import io
 import json
 from pathlib import Path
 import shutil
@@ -253,7 +254,7 @@ print(json.dumps({'fixture':True,'request_id':r['request_id']}))
         self.assertEqual((self.project/'calls.txt').read_text(),'1')
 
     def test_automatic_runner_clone_and_checkpoint_resume(self):
-        base=Path('/workspace/autonomy-runs');base.mkdir(exist_ok=True)
+        base=self.base/'autonomy-runs';base.mkdir()
         with tempfile.TemporaryDirectory(prefix='worker-auto-',dir=base) as directory:
             identifier=Path(directory).name
             w.register_worker(self.store,identifier,self.plan)
@@ -263,13 +264,51 @@ print(json.dumps({'fixture':True,'request_id':r['request_id']}))
                     clones.append(args[-2])
                     return subprocess.check_output(['git','clone','--no-hardlinks',str(self.project),args[-1]],stderr=subprocess.DEVNULL)
                 return original(*args,**kwargs)
-            with patch.object(self.store,'git',side_effect=local_fixture_clone):
+            with patch.dict('os.environ', {'CLOUDKIT_RUNS_ROOT': str(base)}), patch.object(self.store,'git',side_effect=local_fixture_clone):
                 result=w.run_until_terminal(self.store,identifier,None,max_rounds=4)
             root=Path(directory)/'project'
             self.assertEqual(result['status'],'DONE',result)
             self.assertEqual(clones,['https://github.com/fixture/project.git'])
             self.assertEqual((root/'calls.txt').read_text(),'2')
             self.assertEqual(git(root,'remote','get-url','origin'),'https://github.com/fixture/project.git')
+
+    def test_dispatcher_runs_one_worker_boundary_and_wakes_remaining_task(self):
+        self.plan['backends']=[self.backend('fixture','good')]
+        w.register_worker(self.store,'first-worker',self.plan)
+        w.register_worker(self.store,'second-worker',self.plan)
+        runs=self.base/'main-runner';calls=[];fixture_project=self.project
+        original=c.Store.git
+        def fixture_clone(store,*args,**kwargs):
+            if args and args[0]=='clone':
+                self.assertEqual(args[-2],'https://github.com/fixture/project.git')
+                return subprocess.check_output(['git','clone','--no-hardlinks',str(fixture_project),args[-1]],stderr=subprocess.DEVNULL)
+            return original(store,*args,**kwargs)
+        class DispatchTransportFixture:
+            def __init__(self,repository):self.repository=repository
+            def dispatch(self,ref,task_id,event_id):
+                calls.append({'repository':self.repository,'ref':ref,'task_id':task_id,'event_id':event_id})
+                return {'accepted':True}
+        argv=['continuity.py','--repository',str(self.control),'--github-repository','fixture/control',
+              'tick','--event-id','one-runner','--owner','runner-owner']
+        with patch.dict('os.environ',{'CLOUDKIT_RUNS_ROOT':str(runs)}),patch.object(c.Store,'git',fixture_clone),\
+             patch.object(c,'GitHub',DispatchTransportFixture),patch.object(sys,'argv',argv),patch('sys.stdout',new_callable=io.StringIO) as output:
+            code=c.main()
+        self.assertEqual(code,0)
+        report=json.loads(output.getvalue())
+        self.assertEqual(report['scope'],'worker-and-command-continuation')
+        self.assertFalse(report['model_called'])
+        actual=[item for item in report['results'] if item.get('claimed')]
+        self.assertEqual(len(actual),1)
+        self.assertEqual(actual[0]['status'],'DONE')
+        self.assertFalse(actual[0]['actual_model_success_verified'])
+        self.assertEqual((runs/'first-worker/project/calls.txt').read_text(),'1')
+        self.assertFalse((runs/'second-worker/project').exists())
+        _,state=self.store.read();tasks=state['autonomy_tasks']
+        self.assertEqual(tasks['first-worker']['status'],'DONE')
+        self.assertEqual(tasks['second-worker']['status'],'READY')
+        self.assertEqual(tasks['second-worker']['outbox']['status'],'SENT')
+        self.assertEqual(len(calls),1)
+        self.assertEqual(calls[0]['event_id'],tasks['second-worker']['outbox']['event_id'])
 
 
 if __name__=='__main__':unittest.main(verbosity=2)

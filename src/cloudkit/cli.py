@@ -19,7 +19,7 @@ def parser() -> argparse.ArgumentParser:
     install = commands.add_parser('setup')
     install.add_argument('--runtime-root', type=Path, default=DEFAULT_RUNTIME)
     install.add_argument('--memory-protocol', type=Path)
-    install.add_argument('--profile', choices=('core', 'memory', 'languages', 'reverse', 'design', 'code-intelligence'), default='core')
+    install.add_argument('--profile', choices=('core', 'memory', 'queue', 'languages', 'reverse', 'design', 'code-intelligence'), default='core')
     health = commands.add_parser('doctor')
     health.add_argument('--runtime-root', type=Path, default=DEFAULT_RUNTIME)
     health.add_argument('--project-root', type=Path)
@@ -53,6 +53,9 @@ def parser() -> argparse.ArgumentParser:
     run = commands.add_parser('run', description='Invoke a configured task supervisor')
     run.add_argument('--supervisor', type=Path, default=Path(__file__).parent / 'runtime/worker_supervisor.py')
     run.add_argument('arguments', nargs=argparse.REMAINDER)
+    queue = commands.add_parser('queue', description='Deliver durable task wakeups through an optional Redis queue')
+    queue.add_argument('--runtime-root', type=Path, default=DEFAULT_RUNTIME)
+    queue.add_argument('arguments', nargs=argparse.REMAINDER)
     return root
 
 
@@ -61,7 +64,7 @@ def main(argv=None) -> int:
     try:
         if args.command == 'setup':
             result = setup(args.runtime_root, args.memory_protocol)
-            if args.profile == 'memory':
+            if args.profile in ('memory', 'queue'):
                 from .profiles import install_profile
                 result['profile_installation'] = install_profile(args.profile, args.runtime_root)
                 result['profile'] = args.profile
@@ -101,6 +104,13 @@ def main(argv=None) -> int:
             environment = os.environ.copy()
             environment['CLOUDKIT_RUNTIME_ROOT'] = str(args.runtime_root.resolve())
             return subprocess.run(command, env=environment).returncode
+        elif args.command == 'queue':
+            python = args.runtime_root.resolve() / 'queue/.venv/bin/python'
+            bridge = Path(__file__).parent / 'runtime/queue_bridge.py'
+            if not python.is_file() or not bridge.is_file():
+                raise ValueError('Install the queue profile before starting the wakeup bridge')
+            arguments = args.arguments[1:] if args.arguments[:1] == ['--'] else args.arguments
+            return subprocess.run([str(python), str(bridge), *arguments]).returncode
         else:
             supervisor = args.supervisor.resolve()
             if not supervisor.is_file():
