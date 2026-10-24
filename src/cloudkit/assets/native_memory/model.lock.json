@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "repository": "Qdrant/paraphrase-multilingual-MiniLM-L12-v2-onnx-Q",
+  "revision": "faf4aa4225822f3bc6376869cb1164e8e3feedd0",
+  "model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+  "dimensions": 384,
+  "model_sha256": "634d0f66c29dc934c8fa72b8a4fe91dd4d420a22f1d82a241058d4316e659a99",
+  "files": {
+    "config.json": {
+      "bytes": 673,
+      "algorithm": "git-blob-sha1",
+      "digest": "5b496dbbbe502a10e2d64525481c6f444d125403"
+    },
+    "model_optimized.onnx": {
+      "bytes": 235052644,
+      "algorithm": "sha256",
+      "digest": "634d0f66c29dc934c8fa72b8a4fe91dd4d420a22f1d82a241058d4316e659a99"
+    },
+    "special_tokens_map.json": {
+      "bytes": 964,
+      "algorithm": "git-blob-sha1",
+      "digest": "b1879d702821e753ffe4245048eee415d54a9385"
+    },
+    "tokenizer.json": {
+      "bytes": 17083009,
+      "algorithm": "sha256",
+      "digest": "fa685fc160bbdbab64058d4fc91b60e62d207e8dc60b9af5c002c5ab946ded00"
+    },
+    "tokenizer_config.json": {
+      "bytes": 1416,
+      "algorithm": "git-blob-sha1",
+      "digest": "6af3e8bba20e4425103afb1ae3dee3cacdbe7afb"
+    }
+  }
+}

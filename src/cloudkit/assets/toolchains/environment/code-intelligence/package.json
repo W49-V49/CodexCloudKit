@@ -1,0 +1,10 @@
+{
+  "name": "codex-ld-gz-code-intelligence",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pinned cloud-only CodeGraph and optional context output processor",
+  "dependencies": {
+    "@optave/codegraph": "3.17.0",
+    "context-mode": "1.0.169"
+  }
+}

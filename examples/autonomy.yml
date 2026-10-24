@@ -1,0 +1,71 @@
+name: CloudKit task continuation
+on:
+  schedule:
+    - cron: '17 * * * *'
+  repository_dispatch:
+    types: [autonomy_tick]
+  workflow_dispatch:
+    inputs:
+      action:
+        description: Advance registered tasks
+        required: false
+        type: choice
+        options: [tick]
+        default: tick
+      task_id:
+        description: Registered task ID, or blank for due tasks
+        required: false
+        type: string
+      event_id:
+        description: Durable event identifier
+        required: false
+        type: string
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: cloudkit-control-${{ github.repository }}
+  cancel-in-progress: false
+jobs:
+  advance:
+    runs-on: [self-hosted, linux, x64, cloudkit]
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          path: private-control
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: ${{ vars.CLOUDKIT_SOURCE_REPOSITORY }}
+          ref: ${{ vars.CLOUDKIT_SOURCE_REF }}
+          path: toolkit
+          persist-credentials: false
+      - name: Install the configured toolkit revision
+        shell: bash
+        run: |
+          python3 -m venv "$RUNNER_TEMP/cloudkit-venv"
+          "$RUNNER_TEMP/cloudkit-venv/bin/python" -m pip install ./toolkit
+      - name: Advance durable work
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          TASK_ID: ${{ inputs.task_id || github.event.client_payload.task_id }}
+          EVENT_ID: ${{ inputs.event_id || github.event.client_payload.event_id }}
+          CONTROL_BRANCH: ${{ github.event.repository.default_branch }}
+        shell: bash
+        run: |
+          export PATH="$RUNNER_TEMP/cloudkit-venv/bin:$PATH"
+          args=(--repository "$GITHUB_WORKSPACE/private-control" --github-repository "$GITHUB_REPOSITORY" --ref "$CONTROL_BRANCH" --output "$RUNNER_TEMP/cloudkit-round.json" tick)
+          if [[ -n "$TASK_ID" ]]; then args+=(--task-id "$TASK_ID"); fi
+          args+=(--event-id "${EVENT_ID:-wake-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT}")
+          python3 -m cloudkit.runtime.continuity "${args[@]}"
+      - name: Save the round result
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: cloudkit-round-${{ github.run_id }}
+          path: ${{ runner.temp }}/cloudkit-round.json
+          if-no-files-found: error
+          retention-days: 14

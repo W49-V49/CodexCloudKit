@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-10-23T23:51:03.183579+00:00",
+  "platform": "linux-x86_64-glibc",
+  "selection": "Latest stable official metadata observed at checked_at; JDK25 LTS required by Ghidra12.2; exact versions pinned for reproducible installs, not a universal strongest claim",
+  "artifacts": {
+    "go": {
+      "version": "go1.27.3",
+      "url": "https://go.dev/dl/go1.27.3.linux-amd64.tar.gz",
+      "sha256": "65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40",
+      "kind": "tar",
+      "executable": "go/bin/go",
+      "license": "BSD-3-Clause",
+      "source": "https://go.dev/dl/?mode=json"
+    },
+    "jdk": {
+      "version": "25.0.5+8.0.LTS",
+      "url": "https://github.com/adoptium/temurin25-binaries/releases/download/jdk-25.0.5%2B8/OpenJDK25U-jdk_x64_linux_hotspot_25.0.5_8.tar.gz",
+      "sha256": "68982529869257d0ee6b824ec5aa270ff8b118bb438670da0b97ebdab178d7fb",
+      "kind": "tar",
+      "executable": "bin/javac",
+      "license": "GPL-2.0-with-classpath-exception",
+      "source": "https://api.adoptium.net/v3/assets/latest/25/hotspot"
+    },
+    "neovim": {
+      "version": "v0.12.6",
+      "url": "https://github.com/neovim/neovim/releases/download/v0.12.6/nvim-linux-x86_64.tar.gz",
+      "sha256": "474430d53e6264f6d6dd18db42d6dc9df3a1b56ca9e88a325bbf860e1a811d87",
+      "kind": "tar",
+      "executable": "nvim-linux-x86_64/bin/nvim",
+      "license": "Apache-2.0 / Vim",
+      "source": "https://api.github.com/repos/neovim/neovim/releases/latest"
+    },
+    "shellcheck": {
+      "version": "v0.11.0",
+      "url": "https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.linux.x86_64.tar.xz",
+      "sha256": "8c3be12b05d5c177a04c29e3c78ce89ac86f1595681cab149b65b97c4e227198",
+      "kind": "tar",
+      "executable": "shellcheck-v0.11.0/shellcheck",
+      "license": "GPL-3.0",
+      "source": "https://api.github.com/repos/koalaman/shellcheck/releases/latest"
+    },
+    "rustc": {
+      "version": "1.99.1 (58cf8f9c3 2026-10-13)",
+      "url": "https://static.rust-lang.org/dist/2026-10-15/rustc-1.99.1-x86_64-unknown-linux-gnu.tar.xz",
+      "sha256": "2ff05ff9c08a90861e7f6e4065b40a8b87463b4576186fd613871c3e37f2091f",
+      "kind": "rust-component",
+      "license": "MIT / Apache-2.0",
+      "source": "https://static.rust-lang.org/dist/channel-rust-stable.toml"
+    },
+    "cargo": {
+      "version": "0.100.0 (5f94df478 2026-08-27)",
+      "url": "https://static.rust-lang.org/dist/2026-10-15/cargo-1.99.1-x86_64-unknown-linux-gnu.tar.xz",
+      "sha256": "53f3521949404d595efb06a55c12c5658d4ed1c75566f33d3d514eaebe70bd8a",
+      "kind": "rust-component",
+      "license": "MIT / Apache-2.0",
+      "source": "https://static.rust-lang.org/dist/channel-rust-stable.toml"
+    },
+    "rust-std": {
+      "version": "1.99.1 (58cf8f9c3 2026-10-13)",
+      "url": "https://static.rust-lang.org/dist/2026-10-15/rust-std-1.99.1-x86_64-unknown-linux-gnu.tar.xz",
+      "sha256": "109b074225bf5b9ea3820890876bfdf4ed161adbfaf94b2b4b5984c85ee5d958",
+      "kind": "rust-component",
+      "license": "MIT / Apache-2.0",
+      "source": "https://static.rust-lang.org/dist/channel-rust-stable.toml"
+    },
+    "rustfmt-preview": {
+      "version": "1.10.0",
+      "url": "https://static.rust-lang.org/dist/2026-10-15/rustfmt-1.99.1-x86_64-unknown-linux-gnu.tar.xz",
+      "sha256": "e3b36c4c7ec3486c059d8067ff48787676612007123aad7a4e8ec12c48ee9ba2",
+      "kind": "rust-component",
+      "license": "MIT / Apache-2.0",
+      "source": "https://static.rust-lang.org/dist/channel-rust-stable.toml"
+    },
+    "clippy-preview": {
+      "version": "0.1.99",
+      "url": "https://static.rust-lang.org/dist/2026-10-15/clippy-1.99.1-x86_64-unknown-linux-gnu.tar.xz",
+      "sha256": "458339712a058e52cc4522ff9ef8b59cd1ea1340312216cd94194c464a3f6dc5",
+      "kind": "rust-component",
+      "license": "MIT / Apache-2.0",
+      "source": "https://static.rust-lang.org/dist/channel-rust-stable.toml"
+    },
+    "rust-analyzer-preview": {
+      "version": "0.0.0",
+      "url": "https://static.rust-lang.org/dist/2026-10-15/rust-analyzer-1.99.1-x86_64-unknown-linux-gnu.tar.xz",
+      "sha256": "5f2613d62003fc8cbe788d4ae409359c91c241ba248adbefe032df8bb77357bf",
+      "kind": "rust-component",
+      "license": "MIT / Apache-2.0",
+      "source": "https://static.rust-lang.org/dist/channel-rust-stable.toml"
+    }
+  },
+  "go_packages": {
+    "gopls": {
+      "module": "golang.org/x/tools/gopls",
+      "version": "v0.24.0",
+      "origin_commit": "1f9922d1dcc5836d5c5bcb552c8fed230f885372",
+      "source": "https://proxy.golang.org/golang.org/x/tools/gopls/@latest",
+      "integrity": "Go module checksums verified against sum.golang.org; binary dependency hashes recorded in installation report"
+    }
+  },
+  "typescript_compatibility": {
+    "observed_latest": "7.0.2",
+    "selected_shared_sdk": "6.0.3",
+    "language_server": "6.0.2",
+    "reason": "Official TypeScript7 package lacks lib/tsserver.js and real LSP initialize failed; stable6.0.3 provides tested compiler, server SDK and semantic hover. Business projects keep their own dependency versions.",
+    "registry": "https://registry.npmjs.org/typescript"
+  }
+}

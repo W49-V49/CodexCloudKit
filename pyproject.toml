@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools==80.9.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "codexcloudkit"
+version = "0.1.0"
+description = "Reusable cloud tooling, project attachment, and recoverable Codex workflows"
+requires-python = ">=3.11"
+license = "Unlicense"
+dependencies = []
+
+[project.scripts]
+cloudkit = "cloudkit.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+cloudkit = ["assets/native_memory/*", "assets/toolchains/*", "assets/toolchains/**/*", "runtime/*.json", "runtime/*.lock"]
+
+[tool.setuptools.exclude-package-data]
+"*" = ["**/__pycache__/*", "**/*.pyc", "**/*.pyo"]

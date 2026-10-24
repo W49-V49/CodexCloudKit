@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "scope": "one-project-one-branch",
+  "limits": {
+    "partition_bytes": 268435456,
+    "active_fact_bytes": 16777216,
+    "max_active_facts": 2000,
+    "single_note_bytes": 16384
+  },
+  "categories": {
+    "foundation": {
+      "active_bytes": 2097152
+    },
+    "environment": {
+      "active_bytes": 2097152
+    },
+    "tools": {
+      "active_bytes": 2097152
+    },
+    "workflows": {
+      "active_bytes": 2097152
+    },
+    "memory": {
+      "active_bytes": 2097152
+    },
+    "failures": {
+      "active_bytes": 2097152
+    },
+    "verification": {
+      "active_bytes": 2097152
+    },
+    "project": {
+      "active_bytes": 2097152
+    }
+  },
+  "storage_only": true,
+  "recall_policy": "No fixed retrieval count or token budget",
+  "raw_conversations_allowed": false,
+  "auto_delete_facts": false
+}
